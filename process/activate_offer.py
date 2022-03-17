@@ -1,0 +1,145 @@
+import requests
+import json
+import uuid
+import pandas as pd
+from process.connect import make_api_request, get_token
+from process.in_and_out import get_data_input
+
+
+def activate_offer(draft_id, token):
+    new_command_id = str(uuid.uuid4())
+    draft_activating_data = {
+        "publication": {
+            "action": "ACTIVATE"
+        },
+        "offerCriteria": [
+            {
+                "offers": [
+                    {
+                        "id": draft_id
+                    }
+                ],
+                "type": "CONTAINS_OFFERS"
+            }
+        ]
+    }
+    draft_activating_data = json.dumps(draft_activating_data)
+    activating_offer_url = f"https://api.allegro.pl/sale/offer-publication-commands/{new_command_id}"
+    request_response = make_api_request(requests.put, activating_offer_url, data=draft_activating_data, token=token)
+
+    return json.loads(request_response.text)
+
+
+def deactivate_old_offer(offer_id, token):
+    end_command_id = str(uuid.uuid4())
+    deactivating_data = {
+        "publication": {
+            "action": "END"
+        },
+        "offerCriteria": [
+            {
+                "offers": [
+                    {
+                        "id": offer_id
+                    }
+                ],
+                "type": "CONTAINS_OFFERS"
+            }
+        ]
+    }
+    deactivating_data = json.dumps(deactivating_data)
+    deactivating_url = f"https://api.allegro.pl/sale/offer-publication-commands/{end_command_id}"
+    request_response = make_api_request(requests.put, deactivating_url, data=deactivating_data, token=token)
+
+    return json.loads(request_response.text)
+
+
+def get_report(command_id, token):
+    offer_response = make_api_request(
+        func=requests.get,
+        url=f"https://api.allegro.pl/sale/offer-publication-commands/{command_id}/tasks",
+        token=token
+    )
+    return json.loads(offer_response.text)
+
+
+def toggle_activity_offers_batch(offers_list, token, action="ACTIVATE"):
+
+    offers_ids_array = [{'id': _id} for _id in offers_list]
+    new_command_id = str(uuid.uuid4())
+    action_data = {
+        "publication": {
+            "action": action
+        },
+        "offerCriteria": [
+            {
+                "offers": offers_ids_array,
+                "type": "CONTAINS_OFFERS"
+            }
+        ]
+    }
+    action_data = json.dumps(action_data)
+    activating_offer_url = f"https://api.allegro.pl/sale/offer-publication-commands/{new_command_id}"
+    request_response = make_api_request(
+        func=requests.put,
+        url=activating_offer_url,
+        data=action_data,
+        token=token)
+    return json.loads(request_response.text)
+
+
+def end_all_offers():
+    offers_data_file = get_data_input('output')
+    offer_data = pd.read_csv(offers_data_file, sep=';', encoding='UTF-8', low_memory=False)
+    token = get_token()
+
+    all_offer_ids = offer_data.offer_id.to_list()
+    limit = 1000
+    i = 0
+
+    while i < len(all_offer_ids):
+        # print(i)
+        offer_ids_batch = all_offer_ids[i:i + limit]
+        batch_length = len(offer_ids_batch)
+        # print(f'Attempting deactivation of {batch_length} offers')
+        request_response = toggle_activity_offers_batch(
+            offers_list=offer_ids_batch,
+            token=token,
+            action="END")
+        i += batch_length
+        # print(request_response)
+    print('Done!')
+
+
+def run_activate_offers():
+
+    offers_data_file = get_data_input('output')
+    offer_data = pd.read_csv(offers_data_file, sep=';', encoding='UTF-8', low_memory=False)
+    token = get_token()
+    offers_ids_to_activate = offer_data.loc[offer_data.publication == 'ENDED'].loc[offer_data.stock > 0].offer_id.to_list()
+
+    limit = 1000
+    i = 0
+    while i < len(offers_ids_to_activate):
+        print(i)
+        offer_ids_batch = offers_ids_to_activate[i:i+limit]
+        batch_length = len(offer_ids_batch)
+        print(f'Attempting activation of {batch_length} offers')
+        request_response = toggle_activity_offers_batch(
+            offers_list=offer_ids_batch,
+            token=token,
+            action="ACTIVATE")
+        i += batch_length
+        print(request_response)
+
+    return None
+
+
+if __name__ == "__main__":
+    # token = get_token('browse')
+    # report = get_report('eabbc18d-ba84-4330-9ecb-3e798dc4a333', token=token)
+    # print(report['tasks'][0].keys())
+    # for item in report['tasks']:
+    #     print(item)
+
+    end_all_offers()
