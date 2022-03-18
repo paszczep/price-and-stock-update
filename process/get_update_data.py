@@ -41,7 +41,7 @@ def get_offer_price_and_stock_data():
     merge_df = merge_df.loc[~((merge_df['stock'] == 0.0) & (merge_df['Stan magazynowy'] == 0.0))]
 
     merge_cols = ['offer_id', 'Cena sprzedaży brutto', 'Stan magazynowy']
-    print('merge', len(merge_df))
+    print('merge :', len(merge_df))
 
     return merge_df[merge_cols]
 

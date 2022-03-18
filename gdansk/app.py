@@ -2,13 +2,15 @@ import os.path
 import dotenv
 import time
 import sys
+import traceback
 from datetime import datetime, timedelta
+
 sys.path.append('..')
 from process.setup import setup
 from process.auth import run_auth
 from process.edit_offer import update_offers
 from process.activate_offer import end_all_offers
-
+from process.check_own_offers import check_account_offers
 
 dotenv_file = dotenv.find_dotenv()
 os.environ['APP_ROOT'] = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +29,6 @@ def run_help():
 
 
 def run_auto():
-
     start_time = datetime.now()
     update_offers()
     end_time = datetime.now()
@@ -35,13 +36,14 @@ def run_auto():
     print('Czas trwania :', str(delta_time))
     sleep_time_hrs = 11
     print(f'Czekam do {datetime.now() + timedelta(hours=sleep_time_hrs)}.')
-    time.sleep(sleep_time_hrs*60**2)
+    time.sleep(sleep_time_hrs * 60 ** 2)
     run_auto()
 
 
 PROCESS_MAP = {
     'auth': run_auth,
-    'auto': run_auto,
+    # 'auto': run_auto,
+    'check': check_account_offers,
     'update': update_offers,
     'setup': setup,
     'end': end_all_offers,
@@ -54,11 +56,12 @@ def try_except(given_command):
         PROCESS_MAP[given_command]()
     except Exception as ex:
         print(ex)
+        traceback.print_exc()
         time.sleep(10)
         try_except(given_command)
 
 
-def run_unsupervised(command):
+def run_from_command_line(command):
     if command in PROCESS_MAP.keys():
         try_except(command)
     else:
@@ -66,8 +69,7 @@ def run_unsupervised(command):
         run_help()
 
 
-def run_supervised():
-
+def run_menu():
     commands = list(PROCESS_MAP.keys()) + ['exit']
     for com in commands:
         print(com)
@@ -90,8 +92,8 @@ if __name__ == "__main__":
     command_args = sys.argv
 
     if len(command_args) == 1:
-        run_supervised()
+        run_menu()
     elif len(command_args) == 2:
-        run_unsupervised(command_args[1])
+        run_from_command_line(command_args[1])
     else:
         print('Niewłaściwe argumenty')
