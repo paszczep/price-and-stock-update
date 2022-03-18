@@ -1,7 +1,22 @@
 import requests
 import json
+import csv
+import os
+from datetime import datetime
+from process.setup import DATETIME_FORMAT
 from process.connect import get_token, make_api_request
-from process.in_and_out import get_csv_writer
+
+
+def get_csv_writer(column_names):
+    root_path = os.path.dirname(os.environ.get('APP_ROOT'))
+    account_name = os.environ.get('account_name')
+    now = datetime.now()
+    now_date_str = now.strftime(DATETIME_FORMAT)
+    csv_file_path = os.path.join(root_path, 'output', f'{now_date_str}__{account_name}__offers_data.csv')
+    csv_file = open(csv_file_path, "w", encoding='utf-8', newline='')
+    writer = csv.DictWriter(csv_file, fieldnames=column_names, delimiter=';')
+    writer.writeheader()
+    return writer
 
 
 def get_total_amount():

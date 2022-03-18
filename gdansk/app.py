@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 sys.path.append('..')
 from process.setup import setup
 from process.auth import run_auth
-from process.check_own_offers import check_account_offers
 from process.edit_offer import update_offers
 from process.activate_offer import end_all_offers
 
@@ -30,7 +29,6 @@ def run_help():
 def run_auto():
 
     start_time = datetime.now()
-    # check_account_offers()
     update_offers()
     end_time = datetime.now()
     delta_time = end_time - start_time
@@ -44,7 +42,6 @@ def run_auto():
 PROCESS_MAP = {
     'auth': run_auth,
     'auto': run_auto,
-    'check': check_account_offers,
     'update': update_offers,
     'setup': setup,
     'end': end_all_offers,
@@ -79,7 +76,7 @@ def run_supervised():
         command = input('Command: ')
         if command in PROCESS_MAP.keys():
             try_except(command)
-        elif command in ['exit', 'x']:
+        elif command in ['exit', 'x', 'X']:
             break
         elif command in [' ', '']:
             continue

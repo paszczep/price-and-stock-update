@@ -1,6 +1,6 @@
 import pandas as pd
 from dotenv import load_dotenv
-from process.in_and_out import get_data_input
+from process.in_and_out import get_input_data, get_offer_data_file
 import os
 
 load_dotenv()
@@ -8,8 +8,8 @@ load_dotenv()
 
 def get_offer_price_and_stock_data():
 
-    offer_data_file = get_data_input('output')
-    update_data_file = get_data_input('input')
+    offer_data_file = get_offer_data_file()
+    update_data_file = get_input_data()
 
     print('offer file: ', offer_data_file)
     print('update file: ', update_data_file)

@@ -4,7 +4,7 @@ import json
 from process.connect import make_api_request, get_token
 from process.get_update_data import get_offer_price_and_stock_data
 from process.activate_offer import deactivate_old_offer, activate_offer
-from process.in_and_out import get_data_input
+from process.in_and_out import get_input_data
 
 
 def put_offer_on_sale(offer_id, offer_data, token):
@@ -41,7 +41,7 @@ def get_offers_to_update_by_ids(offer_ids_list: list, token):
 def update_offers():
     token = get_token()
 
-    check_offer_data_file = get_data_input('output')
+    check_offer_data_file = get_input_data()
     check_offer_data = pd.read_csv(check_offer_data_file, sep=';', encoding='UTF-8', low_memory=False)
 
     update_data = pd.DataFrame(get_offer_price_and_stock_data())
@@ -68,8 +68,9 @@ def update_offers():
 
             if new_stock == 0 and offer_edit['publication']['status'] != "ENDED":
                 print(f"Ending due to no stock {ofr_id}")
-                request_response = deactivate_old_offer(offer_id=ofr_id, token=token)
-                print(request_response)
+                # request_response = \
+                deactivate_old_offer(offer_id=ofr_id, token=token)
+                # print(request_response)
 
             offer_edit_encoded = json.dumps(offer_edit).encode("UTF-8")
 

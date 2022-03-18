@@ -3,7 +3,7 @@ import json
 import uuid
 import pandas as pd
 from process.connect import make_api_request, get_token
-from process.in_and_out import get_data_input
+from process.in_and_out import get_offer_data_file
 
 
 def activate_offer(draft_id, token):
@@ -89,7 +89,7 @@ def toggle_activity_offers_batch(offers_list, token, action="ACTIVATE"):
 
 
 def end_all_offers():
-    offers_data_file = get_data_input('output')
+    offers_data_file = get_offer_data_file()
     offer_data = pd.read_csv(offers_data_file, sep=';', encoding='UTF-8', low_memory=False)
     token = get_token()
 
@@ -98,11 +98,10 @@ def end_all_offers():
     i = 0
 
     while i < len(all_offer_ids):
-        # print(i)
         offer_ids_batch = all_offer_ids[i:i + limit]
         batch_length = len(offer_ids_batch)
-        # print(f'Attempting deactivation of {batch_length} offers')
-        request_response = toggle_activity_offers_batch(
+        # request_response = \
+        toggle_activity_offers_batch(
             offers_list=offer_ids_batch,
             token=token,
             action="END")
@@ -113,7 +112,7 @@ def end_all_offers():
 
 def run_activate_offers():
 
-    offers_data_file = get_data_input('output')
+    offers_data_file = get_offer_data_file()
     offer_data = pd.read_csv(offers_data_file, sep=';', encoding='UTF-8', low_memory=False)
     token = get_token()
     offers_ids_to_activate = offer_data.loc[offer_data.publication == 'ENDED'].loc[offer_data.stock > 0].offer_id.to_list()
@@ -136,10 +135,5 @@ def run_activate_offers():
 
 
 if __name__ == "__main__":
-    # token = get_token('browse')
-    # report = get_report('eabbc18d-ba84-4330-9ecb-3e798dc4a333', token=token)
-    # print(report['tasks'][0].keys())
-    # for item in report['tasks']:
-    #     print(item)
 
     end_all_offers()

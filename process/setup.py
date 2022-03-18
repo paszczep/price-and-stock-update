@@ -1,6 +1,8 @@
 import dotenv
 import os
 
+DATETIME_FORMAT = '%Y-%m-%d_%H%M'
+
 
 def setup():
     root_path = os.environ.get('APP_ROOT')
