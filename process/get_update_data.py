@@ -20,8 +20,8 @@ def get_offer_price_and_stock_data():
     update_data = pd.read_csv(
         update_data_file, sep=';', encoding='ISO 8859-2', low_memory=False, usecols=update_req_cols)
     update_data['sku'] = update_data['Prefiks'].fillna(value='') + update_data['Indeks'].fillna(value='')
-    print('update data', len(update_data))
-    print('offer data', len(offer_data))
+    print('update data: ', len(update_data))
+    print('offer data: ', len(offer_data))
     update_rel_cols = ['sku', 'Cena sprzedaży netto', 'Stawka VAT', 'Stan magazynowy']
     update_data = update_data[update_rel_cols]
     update_data.set_index('sku', inplace=True, drop=True)
@@ -39,6 +39,7 @@ def get_offer_price_and_stock_data():
     merge_df = merge_df.loc[(merge_df.delta_stock != 0.0) | (merge_df.ratio_price > threshold_ratio)]
     merge_df = merge_df.loc[~merge_df['check']]
     merge_df = merge_df.loc[~((merge_df['stock'] == 0.0) & (merge_df['Stan magazynowy'] == 0.0))]
+    merge_df = merge_df.loc[~((merge_df['Stan magazynowy'] == 0.0) & (merge_df['publication'] == 'ENDED'))]
 
     merge_cols = ['offer_id', 'Cena sprzedaży brutto', 'Stan magazynowy']
     print('merge :', len(merge_df))
@@ -46,8 +47,8 @@ def get_offer_price_and_stock_data():
     return merge_df[merge_cols]
 
 
-if __name__ == "__main__":
-
-    price_df = get_offer_price_and_stock_data()
-
-    # print(price_df[['offer_id', 'Cena sprzedaży netto']])
+# if __name__ == "__main__":
+#
+#     price_df = get_offer_price_and_stock_data()
+#
+#     # print(price_df[['offer_id', 'Cena sprzedaży netto']])

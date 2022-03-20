@@ -38,7 +38,7 @@ def get_offers_to_update_by_ids(offer_ids_list: list, token):
     return offers
 
 
-def edit_particular_offer(offer_edit, update_data, token):
+def edit_particular_offer(offer_edit, update_data):
     ofr_id = int(offer_edit['id'])
     update_data_row = update_data.loc[update_data.offer_id == ofr_id]
     new_brutto_price = "{0:.2f}".format(round(update_data_row['Cena sprzedaży brutto'].values[0], 2))
@@ -66,40 +66,39 @@ def update_offers():
     list_of_lists = [offer_ids_large_list[i:i + batch_size] for i in range(0, offers_list_length, batch_size)]
 
     for offer_ids_list in list_of_lists:
+
         got_offers = get_offers_to_update_by_ids(offer_ids_list, token)
 
         for offer_edit in got_offers:
             ofr_id = offer_edit['id']
-            if ofr_id:
-                try:
-                    offer_edit = edit_particular_offer(offer_edit, update_data, token)
-                    if offer_edit['stock']['available'] == 0:
-                        if offer_edit['publication']['status'] != "ENDED":
-                            print(f"Ending {ofr_id}")
-                            deactivate_old_offer(offer_id=ofr_id, token=token)
-                        else:
-                            pass
 
-                    else:
-                        offer_edit_encoded = json.dumps(offer_edit).encode("UTF-8")
-                        returned_offer_id = put_offer_on_sale(offer_id=ofr_id, offer_data=offer_edit_encoded, token=token)
-                        print('"ok"', returned_offer_id)
+            try:
+                offer_edit = edit_particular_offer(offer_edit, update_data)
+                if offer_edit['stock']['available'] == 0:
+                    if offer_edit['publication']['status'] != "ENDED":
+                        print(f"Ending {ofr_id}")
+                        deactivate_old_offer(offer_id=ofr_id, token=token)
+                else:
+                    offer_edit_encoded = json.dumps(offer_edit).encode("UTF-8")
+                    returned_offer_id = put_offer_on_sale(offer_id=ofr_id, offer_data=offer_edit_encoded, token=token)
+                    print('"ok"', returned_offer_id)
 
-                        if offer_edit['stock']['available'] > 0 and offer_edit['publication']['status'] == "ENDED":
-                            print(f"Activating {returned_offer_id}")
-                            activate_offer(returned_offer_id, token)
-                        check_offer_data.loc[check_offer_data.offer_id == int(returned_offer_id), 'check'] = True
+                    if offer_edit['stock']['available'] > 0 and offer_edit['publication']['status'] == "ENDED":
+                        print(f"Activating {returned_offer_id}")
+                        activate_offer(returned_offer_id, token)
 
-                except Exception as exception:
-                    print('Błąd oferty', ofr_id, exception)
-                    for key, value in offer_edit.items():
-                        if key not in ['description', 'compatibilityList', 'images']:
-                            print(key, value)
-                    check_offer_data.loc[check_offer_data.offer_id == int(ofr_id), 'check'] = True
+                    check_offer_data.loc[check_offer_data.offer_id == int(returned_offer_id), 'check'] = True
 
-                check_offer_data.to_csv(check_offer_data_file, encoding='UTF-8', sep=';', index=False)
+            except Exception as exception:
+                print('Błąd oferty', ofr_id, exception)
+                for key, value in offer_edit.items():
+                    if key in ['id', 'name', 'stock', 'sellingMode', 'product', 'parameters']:
+                        print(key, value)
+                check_offer_data.loc[check_offer_data.offer_id == int(ofr_id), 'check'] = True
+
+            check_offer_data.to_csv(check_offer_data_file, encoding='UTF-8', sep=';', index=False)
 
 
-if __name__ == "__main__":
-
-    update_offers()
+# if __name__ == "__main__":
+#
+#     update_offers()
