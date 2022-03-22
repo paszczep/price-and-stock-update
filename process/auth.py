@@ -23,6 +23,7 @@ def run_auth_2():
         raise Exception(f"Błąd autoryzacji. "
                         f"Kod statusu {auth_response.status_code}. "
                         f"Powód {auth_response.reason}")
+
     new_token = json.loads(auth_response.text)
     new_token_json = {
                 "token": new_token['access_token'],

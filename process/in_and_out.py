@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timedelta
 from process.check_own_offers import check_account_offers
 from process.setup import DATETIME_FORMAT
@@ -15,6 +16,7 @@ def get_offer_data_file():
     file_age = datetime.now() - datetime.strptime(time_string, DATETIME_FORMAT)
 
     if file_age > timedelta(hours=24):
+        logging.info(f'Dane o ofertach starsze niż 24h ({file_age})- pobieranie świeżych')
         check_account_offers()
         get_offer_data_file()
 
@@ -30,6 +32,3 @@ def get_input_data():
 
     return file
 
-
-if __name__ == "__main__":
-    print(get_input_data())

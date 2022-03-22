@@ -2,6 +2,7 @@ import requests
 import json
 import csv
 import os
+import logging
 from datetime import datetime
 from process.setup import DATETIME_FORMAT
 from process.connect import get_token, make_api_request
@@ -19,13 +20,16 @@ def get_csv_writer(column_names):
     return writer
 
 
-def get_total_amount():
+def get_total_amount(token):
     total_amount_data = {
         "publication.status": "ACTIVE",
         "sort": "-stock.sold",
-        "limit": 1
-    }
-    total_amount_response = make_api_request(requests.get, "https://api.allegro.pl/sale/offers", total_amount_data)
+        "limit": 1}
+    total_amount_response = make_api_request(
+        func=requests.get,
+        url="https://api.allegro.pl/sale/offers",
+        data=total_amount_data,
+        token=token)
     total_offers = json.loads(total_amount_response.text)
     return total_offers['totalCount']
 
@@ -52,8 +56,6 @@ def get_own_listing_offers(account_token):
         total_count = offers_data['totalCount']
         batch_count = offers_data['count']
         all_offers += offers_data['offers']
-        print(f'{len(all_offers)} / {total_count}')
-
         count += batch_count
 
     return all_offers
@@ -78,7 +80,7 @@ def check_account_offers():
 
     for offer in offers:
         if offer['external'] is None:
-            print('no sku in offer id', offer['id'])
+            logging.info('no sku in offer id', offer['id'])
             pass
         else:
             offer_values = {

@@ -110,30 +110,18 @@ def end_all_offers():
     print('Done!')
 
 
-def run_activate_offers():
+def ask_delete_offers():
+    check = str(input("Dezaktywować oferty? (Y/N): ")).lower().strip()
+    try:
+        if check[0] == 'y':
+            end_all_offers()
+        elif check[0] == 'n':
+            return None
+        else:
+            print('Niewłaściwa komenda')
+            ask_delete_offers()
+    except Exception as error:
+        print("Coś poszło nie tak...")
+        print(error)
+        ask_delete_offers()
 
-    offers_data_file = get_offer_data_file()
-    offer_data = pd.read_csv(offers_data_file, sep=';', encoding='UTF-8', low_memory=False)
-    token = get_token()
-    offers_ids_to_activate = offer_data.loc[offer_data.publication == 'ENDED'].loc[offer_data.stock > 0].offer_id.to_list()
-
-    limit = 1000
-    i = 0
-    while i < len(offers_ids_to_activate):
-        print(i)
-        offer_ids_batch = offers_ids_to_activate[i:i+limit]
-        batch_length = len(offer_ids_batch)
-        print(f'Attempting activation of {batch_length} offers')
-        request_response = toggle_activity_offers_batch(
-            offers_list=offer_ids_batch,
-            token=token,
-            action="ACTIVATE")
-        i += batch_length
-        print(request_response)
-
-    return None
-
-
-if __name__ == "__main__":
-
-    end_all_offers()

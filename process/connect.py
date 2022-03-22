@@ -20,7 +20,6 @@ def make_api_request(func, url, token, data=None):
 
 
 def get_token():
-
     app_root = os.environ.get('APP_ROOT')
     token_file_path = os.path.join(app_root, 'token.json')
 

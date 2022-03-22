@@ -1,10 +1,12 @@
 import pandas as pd
 import requests
 import json
+import logging
 from process.connect import make_api_request, get_token
 from process.get_update_data import get_offer_price_and_stock_data
 from process.activate_offer import deactivate_old_offer, activate_offer
 from process.in_and_out import get_offer_data_file
+from process.check_own_offers import get_total_amount
 
 
 def put_offer_on_sale(offer_id, offer_data, token):
@@ -32,8 +34,11 @@ def get_offers_to_update_by_ids(offer_ids_list: list, token):
     offers = []
 
     for offer_id in offer_ids_list:
-        offer_details = get_offer_details(offer_id=offer_id, token=token)
-        offers.append(offer_details)
+        try:
+            offer_details = get_offer_details(offer_id=offer_id, token=token)
+            offers.append(offer_details)
+        except Exception as ex:
+            logging.warning(ex)
 
     return offers
 
@@ -54,7 +59,8 @@ def edit_particular_offer(offer_edit, update_data):
 
 def update_offers():
     token = get_token()
-
+    total_active_offers = get_total_amount(token)
+    logging.info(f'Aktywnych ofert na koncie: {total_active_offers}')
     check_offer_data_file = get_offer_data_file()
     check_offer_data = pd.read_csv(check_offer_data_file, sep=';', encoding='UTF-8', low_memory=False)
 
@@ -75,25 +81,24 @@ def update_offers():
             try:
                 offer_edit = edit_particular_offer(offer_edit, update_data)
                 if offer_edit['stock']['available'] == 0:
-                    if offer_edit['publication']['status'] != "ENDED":
-                        print(f"Ending {ofr_id}")
-                        deactivate_old_offer(offer_id=ofr_id, token=token)
+                    logging.info(f"Koniec {ofr_id}")
+                    deactivate_old_offer(offer_id=ofr_id, token=token)
+                    check_offer_data.loc[check_offer_data.offer_id == int(ofr_id), 'check'] = True
+
                 else:
                     offer_edit_encoded = json.dumps(offer_edit).encode("UTF-8")
                     returned_offer_id = put_offer_on_sale(offer_id=ofr_id, offer_data=offer_edit_encoded, token=token)
-                    print('"ok"', returned_offer_id)
-
+                    logging.info(f'"ok" {returned_offer_id}')
                     if offer_edit['stock']['available'] > 0 and offer_edit['publication']['status'] == "ENDED":
-                        print(f"Activating {returned_offer_id}")
+                        logging.info(f"Aktywacja {returned_offer_id}")
                         activate_offer(returned_offer_id, token)
-
                     check_offer_data.loc[check_offer_data.offer_id == int(returned_offer_id), 'check'] = True
 
             except Exception as exception:
-                print('Błąd oferty', ofr_id, exception)
-                for key, value in offer_edit.items():
-                    if key in ['id', 'name', 'stock', 'sellingMode', 'product', 'parameters']:
-                        print(key, value)
+                logging.warning(f'Błąd oferty {ofr_id} - {exception}')
+                # for key, value in offer_edit.items():
+                #     if key in ['id', 'name', 'sellingMode', 'stock', 'external']:
+                #         print(key, value)
                 check_offer_data.loc[check_offer_data.offer_id == int(ofr_id), 'check'] = True
 
             check_offer_data.to_csv(check_offer_data_file, encoding='UTF-8', sep=';', index=False)

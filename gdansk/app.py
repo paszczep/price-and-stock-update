@@ -2,15 +2,20 @@ import os.path
 import dotenv
 import time
 import sys
-import traceback
+import logging
 from datetime import datetime, timedelta
 
 sys.path.append('..')
 from process.setup import setup
 from process.auth import run_auth
 from process.edit_offer import update_offers
-from process.activate_offer import end_all_offers
+from process.activate_offer import ask_delete_offers
 from process.check_own_offers import check_account_offers
+
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(filename='log.csv', level=logging.INFO, format='%(asctime)s; %(levelname)s ; %(message)s')
 
 dotenv_file = dotenv.find_dotenv()
 os.environ['APP_ROOT'] = os.path.dirname(os.path.realpath(__file__))
@@ -24,29 +29,30 @@ def run_help():
           "'check' - pobierz aktualne parametry ofert autoryzowanego konta",
           "'update' - aktualizuj stany magazynowe i ceny ofert",
           "'setup' - wprowadzanie parametrów aktualizacji",
-          "'end' - zakończ wszystkie oferty",
+          "'end' - zakończ wszystkie oferty na autoryzowanym koncie",
           sep='\n')
 
 
 def run_auto():
+    logging.info('Start')
     start_time = datetime.now()
     update_offers()
     end_time = datetime.now()
     delta_time = end_time - start_time
-    print('Czas trwania :', str(delta_time))
+    logging.info(f'Czas trwania: {str(delta_time)}')
     sleep_time_hrs = 11
-    print(f'Czekam do {datetime.now() + timedelta(hours=sleep_time_hrs)}.')
+    logging.info(f'Czekam do {datetime.now() + timedelta(hours=sleep_time_hrs)}.')
     time.sleep(sleep_time_hrs * 60 ** 2)
     run_auto()
 
 
 PROCESS_MAP = {
     'auth': run_auth,
-    # 'auto': run_auto,
+    'auto': run_auto,
     'check': check_account_offers,
     'update': update_offers,
     'setup': setup,
-    'end': end_all_offers,
+    'end': ask_delete_offers,
     'help': run_help,
 }
 
@@ -55,9 +61,8 @@ def try_except(given_command):
     try:
         PROCESS_MAP[given_command]()
     except Exception as ex:
-        print(ex)
-        traceback.print_exc()
-        time.sleep(10)
+        logging.warning(ex)
+        time.sleep(10*60)  # 10 minut
         try_except(given_command)
 
 
