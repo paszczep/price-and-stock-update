@@ -40,6 +40,7 @@ def get_offer_price_and_stock_data():
     merge_df['delta_stock'] = merge_df['stock'] - merge_df['Stan magazynowy']
     price_modifier = float(os.environ['price_modifier_%'])/100
     merge_df['Cena sprzedaży brutto'] = merge_df['Cena sprzedaży netto']*(1 + merge_df['VAT'])*price_modifier
+    merge_df = merge_df.loc[merge_df['Cena sprzedaży brutto'] > 0]
     merge_df['ratio_price'] = abs(merge_df['price'] - merge_df['Cena sprzedaży brutto']) / merge_df['price']
     threshold_ratio = float(os.environ['difference_tolerance_%']) / 100
     merge_df = merge_df.loc[(merge_df.delta_stock != 0.0) | (merge_df.ratio_price > threshold_ratio)]
