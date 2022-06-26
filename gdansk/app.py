@@ -10,12 +10,15 @@ from process.setup import setup
 from process.auth import run_auth
 from process.edit_offer import update_offers
 from process.activate_offer import ask_delete_offers
-from process.check_own_offers import check_account_offers
+# from process.check_own_offers import check_account_offers
 
 
 logger = logging.getLogger(__name__)
 
-logging.basicConfig(filename='log.csv', level=logging.INFO, format='%(asctime)s; %(levelname)s ; %(message)s')
+logging.basicConfig(filename='log.csv',
+                    # level=logging.INFO,
+                    level=logging.DEBUG,
+                    format='%(asctime)s; %(levelname)s ; %(message)s')
 
 dotenv_file = dotenv.find_dotenv()
 os.environ['APP_ROOT'] = os.path.dirname(os.path.realpath(__file__))
@@ -49,7 +52,7 @@ def run_auto():
 PROCESS_MAP = {
     'auth': run_auth,
     'auto': run_auto,
-    'check': check_account_offers,
+    # 'check': check_account_offers,
     'update': update_offers,
     'setup': setup,
     'end': ask_delete_offers,
@@ -60,9 +63,9 @@ PROCESS_MAP = {
 def try_except(given_command):
     try:
         PROCESS_MAP[given_command]()
-    except Exception as ex:
-        logging.warning(ex)
-        time.sleep(10*60)  # 10 minut
+    except Exception:
+        # time.sleep(10*60)  # 10 minut
+        time.sleep(10)
         try_except(given_command)
 
 

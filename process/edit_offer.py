@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 import json
 import logging
-from process.connect import make_api_request, get_token
+from process.connect import make_api_request, make_api_request_offer, get_token
 from process.get_update_data import get_offer_price_and_stock_data
 from process.activate_offer import deactivate_old_offer, activate_offer
 from process.in_and_out import get_offer_data_file
@@ -11,7 +11,7 @@ from process.check_own_offers import get_total_amount
 
 def put_offer_on_sale(offer_id, offer_data, token):
 
-    offer_response = make_api_request(
+    offer_response = make_api_request_offer(
         func=requests.put,
         url=f"https://api.allegro.pl/sale/offers/{offer_id}",
         token=token,
@@ -96,9 +96,6 @@ def update_offers():
 
             except Exception as exception:
                 logging.warning(f'Błąd oferty {ofr_id} - {exception}')
-                # for key, value in offer_edit.items():
-                #     if key in ['id', 'name', 'sellingMode', 'stock', 'external']:
-                #         print(key, value)
                 check_offer_data.loc[check_offer_data.offer_id == int(ofr_id), 'check'] = True
 
             check_offer_data.to_csv(check_offer_data_file, encoding='UTF-8', sep=';', index=False)

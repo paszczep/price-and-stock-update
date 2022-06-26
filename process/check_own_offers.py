@@ -8,7 +8,7 @@ from process.setup import DATETIME_FORMAT
 from process.connect import get_token, make_api_request
 
 
-def get_csv_writer(column_names):
+def get_csv_writer_and_file(column_names):
     root_path = os.path.dirname(os.environ.get('APP_ROOT'))
     account_name = os.environ.get('account_name')
     now = datetime.now()
@@ -17,7 +17,7 @@ def get_csv_writer(column_names):
     csv_file = open(csv_file_path, "w", encoding='utf-8', newline='')
     writer = csv.DictWriter(csv_file, fieldnames=column_names, delimiter=';')
     writer.writeheader()
-    return writer
+    return writer, csv_file
 
 
 def get_total_amount(token):
@@ -57,7 +57,7 @@ def get_own_listing_offers(account_token):
         batch_count = offers_data['count']
         all_offers += offers_data['offers']
         count += batch_count
-
+        logging.info(f'Pobrano {count} / {total_count} ofert')
     return all_offers
 
 
@@ -71,16 +71,17 @@ def get_offer_details(offer_id, token):
 
 
 def check_account_offers():
+    logging.info('Pobiertanie ofert konta')
     token = get_token()
     offers = get_own_listing_offers(account_token=token)
 
     check_offer_cols = ['sku', 'offer_id', 'price', 'stock', 'publication', 'check']
 
-    csv_data_writer = get_csv_writer(column_names=check_offer_cols)
+    csv_data_writer, csv_file = get_csv_writer_and_file(column_names=check_offer_cols)
 
     for offer in offers:
         if offer['external'] is None:
-            logging.info('no sku in offer id', offer['id'])
+            logging.info(f"Brak sku {offer['id']}")
             pass
         else:
             offer_values = {
@@ -93,6 +94,8 @@ def check_account_offers():
             }
 
             csv_data_writer.writerow(offer_values)
+
+    csv_file.close()
 
 
 if __name__ == "__main__":
